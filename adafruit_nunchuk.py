@@ -107,7 +107,7 @@ class Nunchuk:
     def _read_data(self):
         # read all of the current data into local buffer via a single (slow) i2c xfer
         with self.i2c_device as i2c:
-            time.sleep(_I2C_READ_DELAY)
+            #time.sleep(_I2C_READ_DELAY)
             i2c.write(b"\x00")
-            time.sleep(_I2C_READ_DELAY)
+            #time.sleep(_I2C_READ_DELAY)
             i2c.readinto(self.buffer)
