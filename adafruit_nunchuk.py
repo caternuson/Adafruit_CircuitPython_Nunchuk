@@ -51,14 +51,13 @@ __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_Nunchuk.git"
 
 _DEFAULT_ADDRESS = 0x52
 _I2C_INIT_DELAY = 0.1
-_I2C_READ_DELAY = 0.01
-
+_I2C_READ_DELAY = 0.001
 
 class Nunchuk:
     """Class which provides interface to Nintendo Nunchuk controller."""
 
     def __init__(self, i2c, address=_DEFAULT_ADDRESS):
-        self.buffer = bytearray(6)
+        self.buffer = bytearray(8)
         self.i2c_device = I2CDevice(i2c, address)
         time.sleep(_I2C_INIT_DELAY)
         with self.i2c_device as i2c_dev:
@@ -85,6 +84,7 @@ class Nunchuk:
     @property
     def joystick(self):
         """The joystick position."""
+        self._read_data()
         v = self.values
         return v.jx, v.jy
 
@@ -105,9 +105,8 @@ class Nunchuk:
         return v.ax, v.ay, v.az
 
     def _read_data(self):
-        # read all of the current data into local buffer via a single (slow) i2c xfer
+        # read all of the current data into local buffer via a single i2c xfer
         with self.i2c_device as i2c:
-            #time.sleep(_I2C_READ_DELAY)
             i2c.write(b"\x00")
-            #time.sleep(_I2C_READ_DELAY)
+            time.sleep(_I2C_READ_DELAY)
             i2c.readinto(self.buffer)

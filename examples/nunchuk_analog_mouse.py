@@ -1,10 +1,13 @@
 import board
+import busio
 import usb_hid
 from adafruit_hid.mouse import Mouse
 import adafruit_nunchuk
 
+i2c = busio.I2C(board.SCL, board.SDA, frequency=375000)
+nc = adafruit_nunchuk.Nunchuk(i2c)
+
 m = Mouse(usb_hid.devices)
-nc = adafruit_nunchuk.Nunchuk(board.I2C())
 
 centerX = 128
 centerY = 128
@@ -16,14 +19,7 @@ cDown = False
 zDown = False
 
 while True:
-    # get current nunchuk values
-    values = nc.values
-
-    # the ones we use here
-    x = values.jx
-    y = values.jy
-    c = values.C
-    z = values.Z
+    x, y = nc.joystick
 
     # skip spurious reads
     if x == 255 or y == 255:
@@ -35,6 +31,9 @@ while True:
 
     # move cursor
     m.move(int(scaleX * relX), int(scaleY * relY), 0)
+
+    c = nc.button_C
+    z = nc.button_Z
 
     # left click
     if z and not zDown:

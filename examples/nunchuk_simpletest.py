@@ -1,8 +1,11 @@
 import time
 import board
+import busio
 import adafruit_nunchuk
 
-nc = adafruit_nunchuk.Nunchuk(board.I2C())
+i2c = busio.I2C(board.SCL, board.SDA, frequency=375000)
+
+nc = adafruit_nunchuk.Nunchuk(i2c)
 
 while True:
     x, y = nc.joystick
