@@ -26,6 +26,7 @@ Implementation Notes
 * Adafruit's Bus Device library: https://github.com/adafruit/Adafruit_CircuitPython_BusDevice
 """
 import time
+from collections import namedtuple
 from adafruit_bus_device.i2c_device import I2CDevice
 
 __version__ = "0.0.0-auto.0"
@@ -48,6 +49,11 @@ class Nunchuk:
     :type i2c_read_delay: float, optional
     """
 
+    _Values = namedtuple("Values", ("joystick", "buttons", "acceleration"))
+    _Joystick = namedtuple("Joystick", ("x", "y"))
+    _Buttons = namedtuple("Buttons", ("C", "Z"))
+    _Acceleration = namedtuple("Acceleration", ("x", "y", "z"))
+
     def __init__(self, i2c, address=0x52, i2c_read_delay=0.002):
         self.buffer = bytearray(8)
         self.i2c_device = I2CDevice(i2c, address)
@@ -61,32 +67,40 @@ class Nunchuk:
             i2c_dev.write(b"\xFB\x00")
 
     @property
-    def joystick(self):
-        """Return tuple of current joystick position."""
+    def values(self):
+        """The current state of all values."""
         self._read_data()
-        return self.buffer[0], self.buffer[1]
+        return self._Values(
+            self._Joystick(self.buffer[0], self.buffer[1]),
+            self._Buttons(
+                not bool(self.buffer[5] & 0x02), not bool(self.buffer[5] & 0x01)
+            ),
+            self._Acceleration(
+                ((self.buffer[5] & 0xC0) >> 6) | (self.buffer[2] << 2),
+                ((self.buffer[5] & 0x30) >> 4) | (self.buffer[3] << 2),
+                ((self.buffer[5] & 0x0C) >> 2) | (self.buffer[4] << 2),
+            ),
+        )
+
+    @property
+    def joystick(self):
+        """The current joystick position."""
+        return self.values.joystick
 
     @property
     def button_C(self):  # pylint: disable=invalid-name
-        """Return current pressed state of button C."""
-        return not bool(self._read_data()[5] & 0x02)
+        """The current pressed state of button C."""
+        return self.values.buttons.C
 
     @property
     def button_Z(self):  # pylint: disable=invalid-name
-        """Return current pressed state of button Z."""
-        return not bool(self._read_data()[5] & 0x01)
+        """The current pressed state of button Z."""
+        return self.values.buttons.Z
 
     @property
     def acceleration(self):
-        """Return 3 tuple of accelerometer reading."""
-        self._read_data()
-        x = (self.buffer[5] & 0xC0) >> 6
-        x |= self.buffer[2] << 2
-        y = (self.buffer[5] & 0x30) >> 4
-        y |= self.buffer[3] << 2
-        z = (self.buffer[5] & 0x0C) >> 2
-        z |= self.buffer[4] << 2
-        return x, y, z
+        """The current accelerometer reading."""
+        return self.values.acceleration
 
     def _read_data(self):
         return self._read_register(b"\x00")
