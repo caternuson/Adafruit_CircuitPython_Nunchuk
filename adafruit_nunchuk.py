@@ -71,36 +71,51 @@ class Nunchuk:
         """The current state of all values."""
         self._read_data()
         return self._Values(
-            self._Joystick(self.buffer[0], self.buffer[1]),
-            self._Buttons(
-                not bool(self.buffer[5] & 0x02), not bool(self.buffer[5] & 0x01)
-            ),
-            self._Acceleration(
-                ((self.buffer[5] & 0xC0) >> 6) | (self.buffer[2] << 2),
-                ((self.buffer[5] & 0x30) >> 4) | (self.buffer[3] << 2),
-                ((self.buffer[5] & 0x0C) >> 2) | (self.buffer[4] << 2),
-            ),
+            self._joystick(do_read=False),
+            self._buttons(do_read=False),
+            self._acceleration(do_read=False),
         )
 
     @property
     def joystick(self):
         """The current joystick position."""
-        return self.values.joystick
+        return self._joystick()
 
     @property
     def button_C(self):  # pylint: disable=invalid-name
         """The current pressed state of button C."""
-        return self.values.buttons.C
+        return self._buttons().C
 
     @property
     def button_Z(self):  # pylint: disable=invalid-name
         """The current pressed state of button Z."""
-        return self.values.buttons.Z
+        return self._buttons().Z
 
     @property
     def acceleration(self):
         """The current accelerometer reading."""
-        return self.values.acceleration
+        return self._acceleration()
+
+    def _joystick(self, do_read=True):
+        if do_read:
+            self._read_data()
+        return self._Joystick(self.buffer[0], self.buffer[1])
+
+    def _buttons(self, do_read=True):
+        if do_read:
+            self._read_data()
+        return self._Buttons(
+            not bool(self.buffer[5] & 0x02), not bool(self.buffer[5] & 0x01)
+        )
+
+    def _acceleration(self, do_read=True):
+        if do_read:
+            self._read_data()
+        return self._Acceleration(
+            ((self.buffer[5] & 0xC0) >> 6) | (self.buffer[2] << 2),
+            ((self.buffer[5] & 0x30) >> 4) | (self.buffer[3] << 2),
+            ((self.buffer[5] & 0x0C) >> 2) | (self.buffer[4] << 2),
+        )
 
     def _read_data(self):
         return self._read_register(b"\x00")
